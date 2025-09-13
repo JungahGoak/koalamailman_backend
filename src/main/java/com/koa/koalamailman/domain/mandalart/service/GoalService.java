@@ -5,6 +5,7 @@ import com.koa.koalamailman.domain.mandalart.dto.MainGoalDto;
 import com.koa.koalamailman.domain.mandalart.dto.SubGoalDto;
 import com.koa.koalamailman.domain.mandalart.repository.GoalRepository;
 import com.koa.koalamailman.domain.mandalart.repository.entity.GoalEntity;
+import com.koa.koalamailman.domain.mandalart.repository.entity.GoalLevel;
 import com.koa.koalamailman.domain.mandalart.repository.entity.MandalartEntity;
 import com.koa.koalamailman.global.exception.BaseException;
 import com.koa.koalamailman.global.exception.error.MandalartErrorCode;
@@ -89,5 +90,9 @@ public class GoalService {
         GoalEntity goalEntity = goalsMapById.get(goalId);
         if (goalEntity == null) throw new BaseException(MandalartErrorCode.GOAL_NOT_FOUND);
         return goalEntity;
+    }
+
+    public List<GoalEntity> getCoreAndMainGoalsFromMandalart(MandalartEntity mandalart) {
+        return goalRepository.findByMandalartIdAndLevelIn(mandalart.getId(), List.of(GoalLevel.CORE, GoalLevel.MAIN));
     }
 }

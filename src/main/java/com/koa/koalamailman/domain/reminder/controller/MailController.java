@@ -1,16 +1,10 @@
 package com.koa.koalamailman.domain.reminder.controller;
 
+import com.koa.koalamailman.domain.reminder.dto.EmailMessage;
 import com.koa.koalamailman.domain.reminder.service.MailService;
-import com.koa.koalamailman.domain.reminder.dto.MailRequest;
-import com.koa.koalamailman.global.dto.SuccessResponse;
-import com.koa.koalamailman.global.exception.SuccessCode;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
-import java.io.IOException;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/internal/mail")
@@ -19,11 +13,10 @@ public class MailController {
 
     private final MailService mailService;
 
-    @PostMapping
-    public SuccessResponse<Void> sendMail(@RequestBody MailRequest request) throws IOException {
-        mailService.sendMail(request.targetId());
-        return SuccessResponse.success(
-                SuccessCode.SEND_MAIL_SUCCESS
-        );
+    @Operation(summary = "mail send ADMIN 테스트용 api입니다.")
+    @PostMapping("/send")
+    public String send(EmailMessage message) {
+        mailService.send(message);
+        return "OK";
     }
 }

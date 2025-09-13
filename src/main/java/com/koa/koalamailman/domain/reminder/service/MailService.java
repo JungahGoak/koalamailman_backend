@@ -1,78 +1,79 @@
 package com.koa.koalamailman.domain.reminder.service;
 
-import com.koa.koalamailman.domain.mandalart.dto.CoreGoalDto;
+import com.koa.koalamailman.domain.mandalart.repository.entity.GoalEntity;
 import com.koa.koalamailman.domain.mandalart.repository.entity.MandalartEntity;
-import com.koa.koalamailman.domain.mandalart.service.MandalartService;
+import com.koa.koalamailman.domain.mandalart.service.GoalService;
+import com.koa.koalamailman.domain.reminder.client.SesMailClient;
+import com.koa.koalamailman.domain.reminder.dto.EmailMessage;
+import com.koa.koalamailman.domain.reminder.dto.MandalartEmailMessage;
+import com.koa.koalamailman.domain.mandalart.repository.entity.GoalLevel;
 import com.koa.koalamailman.domain.user.repository.User;
-import com.koa.koalamailman.domain.reminder.util.MailContentBuilder;
 import com.koa.koalamailman.domain.user.service.UserService;
-import com.sendgrid.Method;
-import com.sendgrid.Request;
-import com.sendgrid.Response;
-import com.sendgrid.SendGrid;
-import com.sendgrid.helpers.mail.Mail;
-import com.sendgrid.helpers.mail.objects.Content;
-import com.sendgrid.helpers.mail.objects.Email;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.io.IOException;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class MailService {
-
-    @Value("${sendgrid.api-key}")
-    private String apiKey;
-
+    private final SesMailClient mailClient;
     private final UserService userService;
-    private final MandalartService mandalartService;
-    private final ReminderService reminderService;
-    private final MailContentBuilder mailContentBuilder;
+    private final GoalService goalService;
 
-    @Transactional
-    public void sendMail(Long targetId) {
+    @Value("${mail.from}")
+    private String from;
+    @Value("${mail.cta-uri}")
+    private String ctaUrl;
 
+    public void send(EmailMessage message) {
+        mailClient.send(message);
+    }
+    public void sendRemindMail(MandalartEntity mandalart) {
+        User user = userService.findUserById(mandalart.getUserId());
+        List<GoalEntity> goals = goalService.getCoreAndMainGoalsFromMandalart(mandalart);
 
-        User user = userService.findUserById(targetId);
-        MandalartEntity mandalart = mandalartService.findMandalartByMandalartId(targetId);
-        CoreGoalDto coreGoalDto = mandalartService.getMandalartByUserId(targetId);
+        MandalartEmailMessage mandalartEmailMessage = MandalartEmailMessage.builder()
+                .to(user.getEmail())
+                .username(user.getNickname())
+                .from(from)
+                .ctaUrl(ctaUrl)
+                .grid(toGrid(goals))
+                .build();
 
-        try {
-            String title = mailContentBuilder.buildTitle();
-            //String html = mailContentBuilder.buildFullHtml(coreGoal);
-            sendHTMLMail(user.getEmail(), title, "test");
-            reminderService.rescheduleRandomWithinInterval(mandalart.getReminderOption(), mandalart.getId());
-        } catch (IOException e) {
-            log.error("[메일 전송] 전송 실패 - userId: {}, email: {}, 이유: {}", targetId, user.getEmail(), e.getMessage());
-
-            // 메일 전송 실패 시 nextScheduledTime 내일로 다시 설정
-            reminderService.rescheduleTomorrow(mandalart.getReminderOption(), mandalart.getId());
-        }
+        sendMandalartTemplate(mandalartEmailMessage);
     }
 
-    public void sendHTMLMail(String to, String subject, String htmlContent) throws IOException {
-        Email from = new Email("reminder@ringdong.kr");
-        Email toEmail = new Email(to);
-        Content content = new Content("text/html", htmlContent);
-        Mail mail = new Mail(from, subject, toEmail, content);
+    public void sendMandalartTemplate(MandalartEmailMessage message) {
+        mailClient.sendMandalart(message);
+    }
 
-        Request request = new Request();
-        request.setMethod(Method.POST);
-        request.setEndpoint("mail/send");
-        request.setBody(mail.build());
+    private String[][] toGrid(List<GoalEntity> goals) {
+        int size = 3; // 3x3
+        String[][] grid = new String[size][size];
 
-        SendGrid sg = new SendGrid(apiKey);
-        Response response = sg.api(request);
-
-        if (response.getStatusCode() != 202) {
-            throw new IOException("[메일 전송] SendGrid 응답 실패 - 상태 코드: " + response.getStatusCode());
+        for (int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
+                grid[i][j] = "";
+            }
         }
 
-        log.info("[메일 전송] 전송 성공 - to: {}, subject: {}", to, subject);
+        for (GoalEntity goal : goals) {
+            if (goal.getLevel() == GoalLevel.CORE) {
+                grid[1][1] = goal.getContent();
+            } else if (goal.getLevel() == GoalLevel.MAIN) {
+                int pos = goal.getPosition();
+                int row = pos / size;
+                int col = pos % size;
+
+                if (row == 1 && col == 1) {
+                    continue; // CORE
+                }
+
+                grid[row][col] = goal.getContent();
+            }
+        }
+        return grid;
     }
 }

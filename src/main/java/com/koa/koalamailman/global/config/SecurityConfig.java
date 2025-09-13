@@ -51,7 +51,7 @@ public class SecurityConfig {
             // Login / Logout
             LOGIN_URL + "/**", LOGOUT_URL,
             // Swagger
-            "/swagger-ui/index.html","/swagger-ui/**","/v3/api-docs/**"
+            "/swagger-ui/index.html","/swagger-ui/**","/v3/api-docs/**",
     };
 
     @Bean
@@ -66,6 +66,7 @@ public class SecurityConfig {
                 // 권한
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers("/internal").hasRole("ADMIN")
                         .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
                         .anyRequest().authenticated()
                 )

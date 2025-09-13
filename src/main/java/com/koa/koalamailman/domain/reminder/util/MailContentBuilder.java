@@ -1,156 +1,178 @@
 package com.koa.koalamailman.domain.reminder.util;
 
-import org.springframework.stereotype.Component;
+import java.util.Objects;
 
-import java.util.HashMap;
-import java.util.Map;
-
-@Component
 public class MailContentBuilder {
 
-    private static final Map<Integer, String> pastelColors = new HashMap<>();
-    static {
-        pastelColors.put(0, "#eff6ff");  // blue-50
-        pastelColors.put(1, "#f0fdfa");  // teal-50
-        pastelColors.put(2, "#ecfeff");  // cyan-50
-        pastelColors.put(3, "#fffbeb");  // amber-50
-        pastelColors.put(5, "#fff1f2");  // rose-50
-        pastelColors.put(6, "#f5f3ff");  // violet-50
-        pastelColors.put(7, "#ecfdf5");  // emerald-50
-        pastelColors.put(8, "#fff7ed");  // orange-50
-        pastelColors.put(4, "#fef3c7");  // 중앙 메인블럭 yellow-100
+    private static String esc(String s) {
+        if (s == null) return "";
+        return s.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;");
     }
 
-    public String buildTitle() {
-        return "RingDong! 당신의 목표 잊지 않으셨나요?";
-    }
+    public static String build(
+            String username,
+            String[][] grid,
+            String tip,
+            String logoSrc,
+            String heroSrc,
+            String ctaUrl
+    ) {
+        String name = esc(Objects.requireNonNullElse(username, ""));
+        String t    = esc(Objects.requireNonNullElse(tip, "중요한 건 꺾이지 않는 마음입니다."));
+        String logo = esc(Objects.requireNonNullElse(logoSrc, "https://via.placeholder.com/120x40?text=Koala+Mailman"));
+        String hero = esc(Objects.requireNonNullElse(heroSrc, "https://via.placeholder.com/600x200?text=Background"));
+        String cta  = esc(Objects.requireNonNullElse(ctaUrl, "https://ringdong.kr"));
 
-//    public String buildFullHtml(CoreGoal coreGoal) {
-//        StringBuilder html = new StringBuilder();
-//
-//        html.append("<div style='font-family:Arial,sans-serif; font-size:14px; color:#333;'>");
-//
-//        html.append("""
-//<style>
-//  @media screen and (max-width: 600px) {
-//    .full-grid-table td {
-//      display: none;
-//    }
-//    .full-grid-table td[data-position="4"] {
-//      display: table-cell !important;
-//    }
-//  }
-//</style>
-//""");
-//
-//        html.append(buildHeader());
-//        html.append("<br/>");
-//        html.append(buildMainHtml(coreGoal));
-//        html.append("<br/>");
-//        html.append(buildFooter());
-//
-//        html.append("</div>");
-//
-//        return html.toString();
-//    }
-//
-//    private String buildHeader() {
-//        return """
-//        <div style='text-align:center; font-size:18px; font-weight:bold; color:#2c3e50; padding:12px 0;'>
-//            🔔 RingDong! 띵동~<br/>
-//            오늘도 성장하는 당신을 위해<br/>
-//            <span style='color:#f59e0b;'>만다라트 목표</span>를 다시 확인해보세요 💡
-//        </div>
-//    """;
-//    }
-//
-//    private String buildFooter() {
-//        return "<div style='margin-top:12px; text-align:center; font-size:12px; color:#666;'>"
-//                + "링동과 함께 새해목표 더 이상 까먹지 말아요.<br/>"
-//                + "<a href='https://ringdong.kr' style='color:#007BFF; text-decoration:none;'>https://ringdong.kr</a>"
-//                + "</div>";
-//    }
-//    public String buildMainHtml(CoreGoal coreGoal) {
-//        StringBuilder html = new StringBuilder();
-//
-//        html.append("<div style='max-width:620px; margin:0 auto; padding:32px 16px; font-family:Noto Sans KR,Apple SD Gothic Neo,sans-serif;'>");
-//
-//        html.append("<div style='display:grid; grid-template-columns:repeat(3,1fr); gap:4px; border-radius:8px; overflow:hidden;'>");
-//
-//        for (int row = 0; row < 3; row++) {
-//            for (int col = 0; col < 3; col++) {
-//                boolean isCenter = (row == 1 && col == 1);
-//                int pos = row * 3 + col;
-//
-//                // 색상 매핑
-//                String backgroundColor;
-//                if (isCenter) {
-//                    backgroundColor = "#fef3c7"; // 중앙 셀 색상
-//                } else {
-//                    int[] pastelOrder = {0, 1, 2, 3, 5, 6, 7, 8}; // sub position
-//                    int subPosition = mapCenterSurroundingCellToSubPosition(row, col);
-//                    int colorIndex = subPosition >= 0 && subPosition < pastelOrder.length ? pastelOrder[subPosition] : 0;
-//                    backgroundColor = switch (colorIndex) {
-//                        case 0 -> "#eff6ff";
-//                        case 1 -> "#f0fdfa";
-//                        case 2 -> "#ecfeff";
-//                        case 3 -> "#fffbeb";
-//                        case 4 -> "#fef3c7"; // not used here
-//                        case 5 -> "#fff1f2";
-//                        case 6 -> "#f5f3ff";
-//                        case 7 -> "#ecfdf5";
-//                        case 8 -> "#fff7ed";
-//                        default -> "#f0f0f0";
-//                    };
-//                }
-//
-//                html.append("<div style='background-color:")
-//                        .append(backgroundColor)
-//                        .append("; height:72px; display:flex; align-items:center; justify-content:center; font-size:14px; padding:8px; word-break:break-word;'>");
-//
-//                html.append("<a href='https://ringdong.kr' style='color:inherit; text-decoration:none;'>");
-//
-//                if (isCenter) {
-//                    html.append("<b>").append(escape(coreGoal.getContent())).append("</b>");
-//                } else {
-//                    int subPosition = mapCenterSurroundingCellToSubPosition(row, col);
-//                    MainGoal main = coreGoal.getMainGoals().stream()
-//                            .filter(mg -> mg.getPosition() == subPosition)
-//                            .findFirst()
-//                            .orElse(null);
-//                    if (main != null) {
-//                        html.append(escape(main.getContent()));
-//                    }
-//                }
-//
-//                html.append("</a></div>");
-//            }
-//        }
-//
-//        html.append("</div>"); // grid
-//        html.append("</div>"); // container
-//
-//        return html.toString();
-//    }
-//
-//
-//    private String escape(String text) {
-//        if (text == null) return "";
-//        return text.replace("&", "&amp;")
-//                .replace("<", "&lt;")
-//                .replace(">", "&gt;")
-//                .replace("\"", "&quot;");
-//    }
-//
-//    private int mapCenterSurroundingCellToSubPosition(int row, int col) {
-//        if (row == 0 && col == 0) return 0;
-//        if (row == 0 && col == 1) return 1;
-//        if (row == 0 && col == 2) return 2;
-//        if (row == 1 && col == 0) return 3;
-//        if (row == 1 && col == 2) return 5;
-//        if (row == 2 && col == 0) return 6;
-//        if (row == 2 && col == 1) return 7;
-//        if (row == 2 && col == 2) return 8;
-//        return -1;
-//    }
+        String[][] g = new String[3][3];
+        for (int i=0;i<3;i++) for (int j=0;j<3;j++) {
+            String v = (grid!=null && i<grid.length && grid[i]!=null && j<grid[i].length) ? grid[i][j] : "";
+            g[i][j] = esc(Objects.requireNonNullElse(v, ""));
+        }
+
+        String title = name.isBlank()
+                ? "코알라 우체부에게서, 편지가 왔어요  🐨🪽✉️"
+                : name + "님, 코알라 우체부가 편지를 전해요  🐨🪽✉️";
+
+        // 공통 인라인 스타일 상수
+        String font = "font-family:'Apple SD Gothic Neo','Noto Sans KR',Arial,sans-serif;";
+        String containerTable = "width:600px;max-width:100%%;margin:0 auto;border-collapse:collapse;";
+        String inner = "padding:20px 24px;";
+        String panel = "border:1px solid #f6dcd6;background:#fff;border-radius:12px;";
+        String cell  = "background:rgba(255,255,255,0.88);border:1px solid #f0d0c9;text-align:center;vertical-align:middle;"
+                + "padding:14px;font-size:14px;line-height:1.45;height:120px;word-break:keep-all;";
+        String core  = "background:rgba(255,111,97,0.10);border:2px solid #ff6f61;font-weight:700;"
+                + "text-align:center;vertical-align:middle;padding:14px;font-size:14px;line-height:1.45;height:120px;word-break:keep-all;";
+        String ctaStyle = "display:inline-block;background:#16a34a;color:#fff;text-decoration:none;padding:12px 18px;"
+                + "border-radius:10px;font-weight:800;";
+
+        return """
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="x-apple-disable-message-reformatting">
+<title>Koala Mailman Mandal-Art</title>
+</head>
+<body style="margin:0;padding:0;background:#faeee9;%s">
+<table role="presentation" width="100%%" cellspacing="0" cellpadding="0" border="0" style="border-collapse:collapse;">
+<tr><td align="center">
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="%s">
+    <!-- 헤더 로고 -->
+     <tr>
+       <td style="%s">
+         <table role="presentation" width="100%%" cellspacing="0" cellpadding="0" border="0" style="border-collapse:collapse;">
+           <tr>
+             <td align="left" style="%s">
+               <img src="%s" alt="코알라 우체부"
+                    width="120"
+                    style="display:block;border:0;max-width:60px;height:auto"/>
+             </td>
+           </tr>
+         </table>
+       </td>
+     </tr>
+     
+     <!-- 히어로 -->
+     <!--
+     <tr>
+       <td>
+         <img src="%s"
+              alt="Hero Image"
+              width="600"
+              style="display:block;border:0;width:100%%;max-width:600px;height:auto"/>
+       </td>
+     </tr>
+    -->
+    
+    <!-- 타이틀 -->
+    <tr>
+      <td style="%s">
+        <div style="%s font-size:22px;font-weight:800;margin:0 0 6px;">%s</div>
+        <div style="%s font-size:14px;color:#666;margin:0;">작성했던 목표들을 잊지말아요.</div>
+      </td>
+    </tr>
+
+    <!-- 만다라트 -->
+    <tr>
+      <td style="%s">
+        <table role="presentation" width="100%%" cellspacing="0" cellpadding="0" border="0" style="border-collapse:collapse;table-layout:fixed;">
+          <tr>
+            <td style="%s">%s</td>
+            <td style="%s">%s</td>
+            <td style="%s">%s</td>
+          </tr>
+          <tr>
+            <td style="%s">%s</td>
+            <td style="%s">%s</td>
+            <td style="%s">%s</td>
+          </tr>
+          <tr>
+            <td style="%s">%s</td>
+            <td style="%s">%s</td>
+            <td style="%s">%s</td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+
+    <!-- 오늘의 팁 -->
+    <tr>
+      <td style="%s">
+        <table role="presentation" width="100%%" cellspacing="0" cellpadding="0" border="0" style="%s">
+          <tr>
+            <td style="%s font-size:14px;">
+              <strong style="color:#ff6f61;">오늘의 팁</strong> — %s
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+
+    <!-- CTA -->
+    <tr>
+      <td style="%s;text-align:center;">
+        <a href="%s" style="%s">목표 다시 보기</a>
+      </td>
+    </tr>
+
+    <!-- 푸터 -->
+    <tr>
+      <td style="%s;text-align:center;font-size:12px;color:#999;line-height:1.6;">
+        이 메일은 Koala Mailman 서비스 알림입니다.<br/>
+      </td>
+    </tr>
+  </table>
+</td></tr>
+</table>
+</body>
+</html>
+""".formatted(
+                font,
+                containerTable + font,
+                inner + font,
+                font,
+                logo,
+                hero,
+                inner + font,
+                font, title,
+                font,
+                inner + font,
+                cell + font, g[0][0],
+                cell + font, g[0][1],
+                cell + font, g[0][2],
+                cell + font, g[1][0],
+                core + font, g[1][1],
+                cell + font, g[1][2],
+                cell + font, g[2][0],
+                cell + font, g[2][1],
+                cell + font, g[2][2],
+                inner + font,
+                panel + font,
+                "padding:16px 18px;" + font, t,
+                inner + font,
+                cta, ctaStyle,
+                inner + font
+        );
+    }
 }

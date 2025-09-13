@@ -86,8 +86,16 @@ spring:
         options:
           model: ${OPENROUTER_MODEL:mistralai/mistral-7b-instruct:free}
 
-sendgrid:
-  api-key: ${SENDGRID_API_KEY}
+aws:
+  region: ap-northeast-2
+  access-key: ${AWS_ACCESS_KEY_ID}
+  secret-key: ${AWS_SECRET_ACCESS_KEY}
+
+mail:
+  from: "koala mailman <reminder@ringdong.kr>"
+  fromName: "코알라 우체부"
+  charset: "UTF-8"
+  cta-uri: ${FRONT_URI:https://ringdong.kr}
 
 jwt:
   access:
